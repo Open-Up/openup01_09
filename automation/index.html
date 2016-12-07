@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Open Up</title>
+
+		<meta name="description" content="Open Up : Lesson 3 LDAP servers">
+		<meta name="author" content="Tellier Benoit">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+	
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+
+<section>
+<h1>Open-up</h1>
+
+<h2>Automation on Linux</h2>
+
+<img data-src="large.png">
+
+<p>Speaker : <a>Benoit Tellier</a></p>
+
+</section>
+
+
+
+
+
+
+
+
+
+<section>
+<h2>Why this presentation ?</h2>
+
+<ul>
+<li>Scheduling tasks while starting</li>
+<li>Scheduling recurent tasks</li>
+<li>Scheduling log rotation</li>
+</ul>
+</section>
+
+
+
+
+
+
+
+<section>
+
+<section>
+<h1>Tasks while starting</h1>
+</section>
+
+<section>
+<h2>Mounting file system on boot</h2>
+<p>
+Use the fstab file : 
+</p>
+<pre><code>
+/dev/sdb6       /         ext4      rw,relatime,data=ordered	0 1
+/dev/sdb1       /boot     vfat      rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro	0 2
+/dev/sda2       /var      ext4      rw,relatime,data=ordered	0 2
+/dev/sda3       /home     ext4      rw,relatime,data=ordered	0 2
+/dev/sda4       none      swap      defaults  	0 0
+</code></pre>
+</section>
+
+<section>
+<h2>On Debian (run levels)</h2>
+<ul>
+<li>0: Halt the system</li>
+<li>1: Start the system</li>
+<li>2-5: multi-user mode</li>
+<li>6: Reboot</li>
+</ul>
+</section>
+
+<section>
+<h2>Service sum up</h2>
+<p>Service script : </p>
+<pre><code>
+#! /bin/sh
+
+case "$1" in
+  start)
+    echo "Starting script blah "
+    touch /var/lock/blah
+    ;;
+  stop)
+    echo "Stopping script blah"
+    rm /var/lock/blah
+    ;;
+  *)
+    echo "Usage: /etc/init.d/blah {start|stop}"
+    exit 1
+    ;;
+esac
+
+exit 0</code></pre>
+</section>
+
+<section>
+<h2>Service sum up</h2>
+<pre><code>service --status-all
+service apache2 start
+service apache2 stop
+service apache2 status</code></pre>
+</section>
+
+<section>
+<h2>Managing services started / stopped</h2>
+<pre><code>update-rc.d apache2 defaults
+update-rc.d apache2 remove</code></pre>
+</section>
+
+<section>
+<h2>Setting up priorities</h2>
+<pre><code>update-rc.d apache2 defaults [START] [KILL]
+
+update-rc.d apache2 defaults 90 90
+update-rc.d mysql defaults 10 10
+
+update-rc.d apache2 defaults 90
+update-rc.d mysql defaults 10</code></pre>
+</section>
+
+<section>
+<h2>Setting run levels</h2>
+<pre><code> 	
+update-rc.d apache2 start 10 2 3 4 5 . stop 90 0 1 6 .</code></pre>
+</section>
+
+</section>
+
+
+<!--
+================================================
+================================================
+================================================
+================================================
+-->
+
+<section>
+
+<section>
+<h1>Using crontab</h1>
+</section>
+
+<section>
+<h2>Seeing recuring jobs</h2>
+<p>
+Jobs are per user...
+</p>
+<pre><code>crontab -l
+# dom : day of mounth
+# mon : month
+# dow : day of week
+
+# mins hours  dom mon dow   command
+  0    5,17   *   *   1     tar -zcf /var/backups/home.tgz /home/</code></pre>
+<pre><code>crontab -e</code></pre>
+</section>
+
+</section>
+
+
+<!--
+================================================
+================================================
+================================================
+================================================
+-->
+
+<section>
+
+<section>
+<h1>Log rotation</h1>
+</section>
+
+<section>
+<h2>Log rotation ?</h2>
+<pre><code>benwa@horizon ~ % ls -l ~log/cups
+-rw-r--r-- 1 root lp    0 11 oct.  14:05 access_log
+-rw-r--r-- 1 root lp 7379 12 oct.  02:12 access_log.1
+-rw-r--r-- 1 root lp  552 16 sept.  2015 access_log.2
+-rw-r--r-- 1 root lp  448 10 sept.  2015 access_log.3
+-rw-r--r-- 1 root lp 4345 28 aout   2015 access_log.4
+-rw-r--r-- 1 root lp    0 30 aout   2015 error_log
+-rw-r--r-- 1 root lp  474 28 aout   2015 error_log.1
+-rw-r--r-- 1 root lp    0 17 sept.  2015 page_log
+-rw-r--r-- 1 root lp 3654 16 sept.  2015 page_log.1
+-rw-r--r-- 1 root lp  660 10 sept.  2015 page_log.2
+-rw-r--r-- 1 root lp  928 28 aout   2015 page_log.3
+</code></pre>
+</section>
+
+<section>
+<h2>/etc/logrotate.conf</h2>
+<pre><code>man logrotate</code></pre>
+<pre><code>benwa@horizon ~ % cat /etc/logrotate.conf 
+weekly
+rotate 4
+#size 20M
+create
+#compress
+# olddir /var/log/archive
+
+include /etc/logrotate.d
+
+/var/log/wtmp {
+    monthly
+    create 0664 root utmp
+    minsize 1M
+    rotate 1
+}</code></pre>
+</section>
+
+<section>
+<h2>/etc/logrotate.d/cups</h2>
+<pre><code>benwa@horizon ~ % cat /etc/logrotate.conf 
+weekly
+rotate 4
+#size 20M
+create
+#compress
+# olddir /var/log/archive
+
+include /etc/logrotate.d
+
+/var/log/wtmp {
+    monthly
+    create 0664 root utmp
+    minsize 1M
+    rotate 1
+}</code></pre>
+</section>
+
+<section>
+<h2>/etc/logrotate.d/cups</h2>
+<pre><code>       compress
+
+       /var/log/messages {
+           rotate 5
+           weekly
+           postrotate
+               /usr/bin/killall -HUP syslogd
+           endscript
+       }
+
+       "/var/log/httpd/access.log" /var/log/httpd/error.log {
+           rotate 5
+           mail www@my.org
+           size 100k
+           sharedscripts
+           postrotate
+               /usr/bin/killall -HUP httpd
+           endscript
+       }
+
+       /var/log/news/* {
+           monthly
+           rotate 2
+           olddir /var/log/news/old
+           missingok
+           postrotate
+               kill -HUP `cat /var/run/inn.pid`
+           endscript
+           nocompress
+       }
+</code></pre>
+</section>
+
+</section>
+
+
+<!--
+================================================
+================================================
+================================================
+================================================
+-->
+
+
+
+<section>
+	<h1>Questions ?</h1>
+</section>
+
+
+
+
+
+
+
+
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				slideNumber: true,
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+                                
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
